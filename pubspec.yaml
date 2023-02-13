@@ -32,8 +32,12 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_sensors: ^1.0.1
+  geocoding: ^2.0.5
+  geolocator: ^9.0.2
+  permission_handler: ^10.2.0
   provider: ^6.0.5
   shake: ^2.2.0
+  pedometer: ^3.0.0
 
 dev_dependencies:
   flutter_lints: ^2.0.0
