@@ -91,23 +91,28 @@ class DarwinScreen extends StatelessWidget {
 
   Future<String> getPosToString() async {
     String resp;
-    Object status;
     try {
-      status = await Permission.location.request();
-      if (status != PermissionStatus.granted) {
-        //PermissionStatus[denied, permanentlyDenied]
-        resp = "Debe aceptar los permisos de ubicacion";
-      } else {
-        await _validateNet();
-        await _validateGps();
-        final posicionActual = await Geolocator.getCurrentPosition();
-        resp = await getDirecctionToStr(
-            posicionActual.latitude, posicionActual.longitude);
-      }
+      await _validatePermissionLocation();
+      await _validateNet();
+      await _validateGps();
+      final pos = await Geolocator.getCurrentPosition();
+      resp = await getDirecctionToStr(pos.latitude, pos.longitude);
+    } on FormatException catch (e) {
+      resp = e.message;
     } catch (e) {
-      resp = 'error <getPosToString>  ${e.toString()}';
+      resp = 'Ocurrio un error inesperado, consulte a su administador';
+      debugPrint('!Error <getPosToString>: ${e.toString()}');
     }
     return resp;
+  }
+
+  Future<void> _validatePermissionLocation() async {
+    Object status;
+    status = await Permission.location.request();
+    //PermissionStatus[denied, permanentlyDenied]
+    if (status != PermissionStatus.granted) {
+      throw const FormatException('Debe aceptar los permisos de ubicacion');
+    }
   }
 
   Future<void> _validateNet() async {
@@ -142,8 +147,8 @@ class DarwinScreen extends StatelessWidget {
         resp = '$direction #$street, $city, $department';
       }
     } catch (e) {
-      resp = 'Error <getDirecctionToString>:  ${e.toString()}';
-      throw FormatException(resp);
+      resp = '!Error <getDirecctionToStr>:  ${e.toString()}';
+      throw DeferredLoadException(resp);
     }
     return resp;
   }
