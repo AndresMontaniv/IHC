@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:pedometer/pedometer.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 String formatDate(DateTime d) {
   return d.toString().substring(0, 19);
@@ -24,6 +25,7 @@ class _PedometerScreenState extends State<PedometerScreen> {
   @override
   void initState() {
     super.initState();
+    
     initPlatformState();
   }
 
@@ -56,7 +58,12 @@ class _PedometerScreenState extends State<PedometerScreen> {
     });
   }
 
-  void initPlatformState() {
+  void initPlatformState() async{
+    final isDenied = await Permission.activityRecognition.isDenied;
+      debugPrint('isDenied: $isDenied');
+      if (isDenied) {
+        await Permission.activityRecognition.request();
+      } 
     _pedestrianStatusStream = Pedometer.pedestrianStatusStream;
     _pedestrianStatusStream
         .listen(onPedestrianStatusChanged)

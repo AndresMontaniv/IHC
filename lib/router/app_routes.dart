@@ -16,6 +16,7 @@ class AppRoutes {
         'shake': (BuildContext context) => const ShakeScreen(),
         'darwin': (BuildContext context) => const DarwinScreen(),
         'pedometer': (BuildContext context) => const PedometerScreen(),
+        'environment': (BuildContext context) => const environmentScreen(),
       },
     );
 

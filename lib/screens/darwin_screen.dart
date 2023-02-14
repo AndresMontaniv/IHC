@@ -6,6 +6,7 @@ import 'package:ihc_app/widgets/widgets.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class DarwinScreen extends StatelessWidget {
   const DarwinScreen({super.key});
@@ -49,10 +50,10 @@ class DarwinScreen extends StatelessWidget {
                   ),
                   _buttonRequest(
                       context,
-                      () => Navigator.pushNamed(context, 'sensor'),
+                      () => Navigator.pushNamed(context, 'environment'),
                       Colors.blue,
                       Colors.white,
-                      'sensor'),
+                      'environment'),
                   // const SizedBox(height: 10,),
                   // _buttonRequest(context, (){Vibration.vibrate(duration: 1000);}, Colors.blueGrey, Colors.black, 'vibrar'),
                   // _buttonRequest(context, (){Vibration.vibrate(pattern: [0, 1000, 1000, 2000]);}, Colors.blueGrey, Colors.black, 'vibrar'),
@@ -90,56 +91,59 @@ class DarwinScreen extends StatelessWidget {
 
   Future<String> getPosToString() async {
     String resp;
+    Object status;
     try {
-      // final isGranted = await Permission.location.isGranted;
-      // debugPrint('isGranted: $isGranted');
-      //askGpsAccess------------------------
-      final status = await Permission.location.request();
-      debugPrint('status: $status');
-      switch (status) {
-        case PermissionStatus.granted:
-          final posicionActual = await Geolocator.getCurrentPosition();
-          resp = await getDirecctionToString(
-              posicionActual.latitude, posicionActual.longitude);
-          return resp;
-        case PermissionStatus.denied:          
-          break;
-        case PermissionStatus.restricted:
-        case PermissionStatus.limited:
-        case PermissionStatus.permanentlyDenied:
-          // add(GpsAndPermissionEvent(
-          //   isGpsEnable: state.isGpsEnable,
-          //   isGpsPermissionGranted: false,
-          // ));
-          openAppSettings();
+      status = await Permission.location.request();
+      if (status != PermissionStatus.granted) {
+        //PermissionStatus[denied, permanentlyDenied]
+        resp = "Debe aceptar los permisos de ubicacion";
+      } else {
+        await _validateNet();
+        await _validateGps();
+        final posicionActual = await Geolocator.getCurrentPosition();
+        resp = await getDirecctionToStr(
+            posicionActual.latitude, posicionActual.longitude);
       }
-      resp = 'no acepto permisos';
     } catch (e) {
       resp = 'error <getPosToString>  ${e.toString()}';
     }
     return resp;
   }
 
-  Future<String> getDirecctionToString(
-      double latitude, double longitude) async {
-    String resp;
+  Future<void> _validateNet() async {
+    var status = await (Connectivity().checkConnectivity());
+    if (!(status == ConnectivityResult.mobile ||
+        status == ConnectivityResult.wifi)) {
+      throw const FormatException("Debe tener internet");
+    }
+  }
+
+  Future<void> _validateGps() async {
+    final isEnable = await Geolocator.isLocationServiceEnabled();
+    if (!isEnable) {
+      throw const FormatException("Debe habilitar la Ubicacion");
+    }
+  }
+
+  Future<String> getDirecctionToStr(double lat, double long) async {
+    String resp, direction, street, city, department;
+    List<Placemark> address;
     try {
-      List<Placemark> address =
-          await placemarkFromCoordinates(latitude, longitude);
+      address = await placemarkFromCoordinates(lat, long);
       // print(address);
       if (address.isEmpty) {
-        resp = 'sin direcciones';
+        resp = 'No se pudo encontrar su direccion';
       } else {
-        String direction = address[0].thoroughfare!;
-        String street = address[0].subThoroughfare!;
-        String city = address[0].locality!;
-        String department = address[0].administrativeArea!;
+        direction = address[0].thoroughfare!;
+        street = address[0].subThoroughfare!;
+        city = address[0].locality!;
+        department = address[0].administrativeArea!;
         // String country = address[0].country!;
         resp = '$direction #$street, $city, $department';
       }
     } catch (e) {
       resp = 'Error <getDirecctionToString>:  ${e.toString()}';
-      throw FormatException(e.toString());
+      throw FormatException(resp);
     }
     return resp;
   }
