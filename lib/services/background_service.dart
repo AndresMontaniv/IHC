@@ -7,9 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:alan_voice/alan_voice.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:ihc_app/helpers/helpers.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pedometer/pedometer.dart';
 
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 
@@ -38,6 +40,9 @@ Map<String, String> personalInfo = {
   'email': 'amontano.user@gmail.com',
 };
 
+//?pedometer
+late Stream<StepCount> _stepCountStream;
+int _stepInit = 0, _stepHistory = 0;
 //* Background Service Config
 
 Future initializeService() async {
@@ -106,10 +111,23 @@ void _initAll() async {
   AlanVoice.onCommand.add((command) => _handleCommand(command.data));
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
-      _activateAlan();
+      // _activateAlan();
       // _handleCommand({'command': 'increment'});
+      _handleCommand({'command': 'location'});
     },
   );
+
+  //* pedometer inicio
+  final status = await Permission.activityRecognition.request();
+  if (status == PermissionStatus.permanentlyDenied) {
+    await openAppSettings();
+  }
+  if (status == PermissionStatus.denied) {
+    _playText('Error!, activity is not enabled in the phone');
+    return;
+  }
+  _stepCountStream = Pedometer.stepCountStream;
+  _stepCountStream.listen(onStepCount).onError(onStepCountError);
 }
 
 void _stopAll() {
@@ -309,20 +327,66 @@ void sendSOSAlert() async {
 
 //* Location Command
 void runLocationCommand() async {
-  final res = await InternetConnectionChecker().hasConnection;
-  if (!res) {
-    _playText('No Internet');
-  }
+  String respText;
+  try {
+    final status = await Permission.location.request();
+    if (status == PermissionStatus.permanentlyDenied) {
+      await openAppSettings();
+    }
+    if (status == PermissionStatus.denied) {
+      _playText('Error!, gps is not enabled in the phone');
+      return;
+    }
 
-  //! Aqui poner el codigo de get location en String
-  _playText('Calle 1, Santa Cruz de la Sierra');
+    final resNet = await InternetConnectionChecker().hasConnection;
+    if (!resNet) {
+      _playText('Error!, internet is not enabled in the phone');
+      return;
+    }
+
+    final isEnableGps = await Geolocator.isLocationServiceEnabled();
+    if (!isEnableGps) {
+      _playText('Error!, gps is not enabled in the phone');
+      return;
+    }
+    final pos = await Geolocator.getCurrentPosition();
+    respText = await getDirecctionToStr(pos.latitude, pos.longitude);
+  } catch (e) {
+    respText = 'Error getting ubication';
+    debugPrint(e.toString());
+  }
+  _playText(respText);
+  // _playText('Calle 1, Santa Cruz de la Sierra');
+}
+
+Future<String> getDirecctionToStr(double lat, double long) async {
+  String resp, direction, street, city, department;
+  List<Placemark> address;
+  try {
+    address = await placemarkFromCoordinates(lat, long);
+    if (address.isEmpty) {
+      resp = 'No se pudo encontrar su direccion';
+    } else {
+      direction = address[0].thoroughfare!;
+      street = address[0].subThoroughfare!;
+      city = address[0].locality!;
+      department = address[0].administrativeArea!;
+      // String country = address[0].country!;
+      resp = '$direction #$street, $city, $department';
+    }
+  } catch (e) {
+    resp = 'Error getting ubication';
+  }
+  return resp;
 }
 
 //* Pedometer Commands
 
-void startCountingSteps() {
+void startCountingSteps() async {
   steps = 0;
   isCountingSteps = true;
+  _stepInit = 0;
+  _playText('starting count');
 }
 
 void stopCountingSteps() {
@@ -332,5 +396,21 @@ void stopCountingSteps() {
 
 void getStepsCount() {
   steps = DateTime.now().hour;
+  isCountingSteps = false;
   _playText('You have walked $steps steps');
+}
+
+void onStepCount(StepCount event) {
+  debugPrint('$event');
+  _stepHistory = event.steps;
+  if (isCountingSteps) {
+    if (_stepInit == 0) {
+      _stepInit = event.steps; 
+    }
+    steps = _stepHistory - _stepInit;
+  }
+}
+
+void onStepCountError(error) {
+  debugPrint('onStepCountError: $error');
 }
