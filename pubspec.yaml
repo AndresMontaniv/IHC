@@ -31,7 +31,16 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter:
     sdk: flutter
+  flutter_background_service: ^2.4.6
+  flutter_background_service_android: ^3.0.3
   flutter_sensors: ^1.0.1
+  flutter_sms: ^2.3.3
+  geocoding: ^2.0.5
+  geolocator: ^9.0.2
+  http: ^0.13.5
+  internet_connection_checker: ^0.0.1+4
+  mailer: ^6.0.0
+  permission_handler: ^10.2.0
   provider: ^6.0.5
   shake: ^2.2.0
 

@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         debugPrint('Unknown Command');
     }
+    // _deactivateAlan();
   }
 
   void _activateAlan() {
