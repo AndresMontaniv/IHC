@@ -273,7 +273,6 @@ Future<String> sendEmail(String location) async {
 }
 
 void sendSOSAlert() async {
-  print('entro al case');
   String playResp = '';
   //* Get Permissions
   bool isLocationDenied = await Permission.location.isDenied;

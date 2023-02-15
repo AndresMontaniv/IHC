@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:ihc_app/screens/screens.dart';
 
 class AppRoutes {
-  static const initialRoute = 'home';
+  static const initialRoute = 'darwin';
 
   static Map<String, Widget Function(BuildContext)> getAppRoutes() {
     Map<String, Widget Function(BuildContext)> appRoutes = {};
@@ -14,6 +14,8 @@ class AppRoutes {
         'sensor1': (BuildContext context) => const Sensor1Screen(),
         'sensor2': (BuildContext context) => const Sensor2Screen(),
         'shake': (BuildContext context) => const ShakeScreen(),
+        'darwin': (BuildContext context) => const DarwinScreen(),
+        'pedometer': (BuildContext context) => const PedometerScreen(),
       },
     );
 
