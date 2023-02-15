@@ -72,7 +72,7 @@ bool onIosBackground(ServiceInstance service) {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  print('----nise'); 
+  print('----nise');
   DartPluginRegistrant.ensureInitialized();
   _initAll();
   if (service is AndroidServiceInstance) {
@@ -336,7 +336,7 @@ void runLocationCommand() async {
   try {
     bool isLocationDenied = await Permission.location.isDenied;
     if (isLocationDenied) {
-      //! hay un error 
+      //! hay un error
       var status = await Permission.location.request();
       if (PermissionStatus.permanentlyDenied == status) {
         await openAppSettings();
@@ -350,15 +350,15 @@ void runLocationCommand() async {
 
     final resNet = await InternetConnectionChecker().hasConnection;
     if (!resNet) {
-      // _playText('Error!, internet is not enabled in the phone');
-      print('Error!, internet is not enabled in the phone');
+      _playText('Error!, internet is not enabled in the phone');
+      // print('Error!, internet is not enabled in the phone');
       return;
     }
 
     final isEnableGps = await Geolocator.isLocationServiceEnabled();
     if (!isEnableGps) {
-      // _playText('Error!, gps is not enabled in the phone');
-      print('Error!, gps is not enabled in the phone');
+      _playText('Error!, gps is not enabled in the phone');
+      // print('Error!, gps is not enabled in the phone');
       return;
     }
     final pos = await Geolocator.getCurrentPosition();
@@ -367,8 +367,9 @@ void runLocationCommand() async {
     respText = 'Error getting ubication';
     debugPrint(e.toString());
   }
+  // print(respText);
   print(respText);
-  // _playText(respText);
+  _playText(respText);
   // _playText('Calle 1, Santa Cruz de la Sierra');
 }
 
