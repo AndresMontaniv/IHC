@@ -72,6 +72,7 @@ bool onIosBackground(ServiceInstance service) {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  print('----nise'); 
   DartPluginRegistrant.ensureInitialized();
   _initAll();
   if (service is AndroidServiceInstance) {
@@ -101,6 +102,7 @@ void onStart(ServiceInstance service) async {
         "counter": counter,
       },
     );
+    print('-------------$counter-----------------');
   });
 }
 
@@ -112,6 +114,7 @@ void _initAll() async {
   AlanVoice.onCommand.add((command) => _handleCommand(command.data));
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
+      print('-------ShakeDetector--------------');
       _activateAlan();
       // _handleCommand({'command': 'increment'});
       // _handleCommand({'command': 'location'});
@@ -331,24 +334,31 @@ void sendSOSAlert() async {
 void runLocationCommand() async {
   String respText;
   try {
-    final status = await Permission.location.request();
-    if (status == PermissionStatus.permanentlyDenied) {
-      await openAppSettings();
-    }
-    if (status == PermissionStatus.denied) {
-      _playText('Error!, gps is not enabled in the phone');
-      return;
+    bool isLocationDenied = await Permission.location.isDenied;
+    if (isLocationDenied) {
+      //! hay un error 
+      var status = await Permission.location.request();
+      if (PermissionStatus.permanentlyDenied == status) {
+        await openAppSettings();
+      }
+      isLocationDenied = await Permission.location.isDenied;
+      if (isLocationDenied) {
+        _playText('Error!, Location permission disabled');
+        return;
+      }
     }
 
     final resNet = await InternetConnectionChecker().hasConnection;
     if (!resNet) {
-      _playText('Error!, internet is not enabled in the phone');
+      // _playText('Error!, internet is not enabled in the phone');
+      print('Error!, internet is not enabled in the phone');
       return;
     }
 
     final isEnableGps = await Geolocator.isLocationServiceEnabled();
     if (!isEnableGps) {
-      _playText('Error!, gps is not enabled in the phone');
+      // _playText('Error!, gps is not enabled in the phone');
+      print('Error!, gps is not enabled in the phone');
       return;
     }
     final pos = await Geolocator.getCurrentPosition();
@@ -357,7 +367,8 @@ void runLocationCommand() async {
     respText = 'Error getting ubication';
     debugPrint(e.toString());
   }
-  _playText(respText);
+  print(respText);
+  // _playText(respText);
   // _playText('Calle 1, Santa Cruz de la Sierra');
 }
 
