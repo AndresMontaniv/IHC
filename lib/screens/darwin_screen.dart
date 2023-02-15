@@ -109,7 +109,7 @@ class DarwinScreen extends StatelessWidget {
   Future<void> _validatePermissionLocation() async {
     Object status;
     status = await Permission.location.request();
-    //PermissionStatus[denied, permanentlyDenied]
+    //Permi ssionStatus[denied, permanentlyDenied]
     if (status != PermissionStatus.granted) {
       throw const FormatException('Debe aceptar los permisos de ubicacion');
     }
