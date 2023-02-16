@@ -28,7 +28,6 @@ final service = FlutterBackgroundService();
 ShakeDetector? detector;
 int counter = 0;
 int steps = 0;
-bool isCountingSteps = false;
 Map<String, String> contact = {
   'name': 'Ross Geller',
   'phone': '59172182712',
@@ -43,6 +42,7 @@ Map<String, String> personalInfo = {
 //?pedometer
 Stream<StepCount>? _stepCountStream;
 int _stepInit = 0, _stepHistory = 0;
+bool isCountingSteps = false;
 
 //* Background Service Config
 
@@ -114,11 +114,8 @@ void _initAll() async {
   AlanVoice.onCommand.add((command) => _handleCommand(command.data));
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
-      print('-------ShakeDetector--------------');
       // _activateAlan();
-      // _handleCommand({'command': 'increment'});
-      // _handleCommand({'command': 'location'});
-      _handleCommand({'command': 'start_step_count'});
+      _handleCommand({'command': 'location'});
     },
   );
 }
@@ -270,8 +267,6 @@ Future<String> sendEmail(String location) async {
         }
       }),
     );
-    print(response.statusCode);
-    print(response.body);
     if (response.statusCode == 200) {
       return 'Email Sent Successfuly';
     } else {
@@ -339,14 +334,12 @@ void runLocationCommand() async {
     final resNet = await InternetConnectionChecker().hasConnection;
     if (!resNet) {
       _playText('Error!, internet is not enabled in the phone');
-      // print('Error!, internet is not enabled in the phone');
       return;
     }
 
     final isEnableGps = await Geolocator.isLocationServiceEnabled();
     if (!isEnableGps) {
       _playText('Error!, gps is not enabled in the phone');
-      // print('Error!, gps is not enabled in the phone');
       return;
     }
     final pos = await Geolocator.getCurrentPosition();
@@ -355,10 +348,8 @@ void runLocationCommand() async {
     respText = 'Error getting ubication';
     debugPrint(e.toString());
   }
-  // print(respText);
   print(respText);
   _playText(respText);
-  // _playText('Calle 1, Santa Cruz de la Sierra');
 }
 
 Future<String> getDirecctionToStr(double lat, double long) async {
@@ -432,9 +423,9 @@ void onStepCount(StepCount event) {
       _stepInit = event.steps;
     }
     steps = _stepHistory - _stepInit;
-    // if (steps % 10 == 0) {
-    //   getStepsCount();
-    // }
+    if (steps % 10 == 0) {
+      getStepsCount();
+    }
   }
 }
 
