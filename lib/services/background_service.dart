@@ -106,8 +106,8 @@ void _initAll() async {
   AlanVoice.onCommand.add((command) => _handleCommand(command.data));
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
-      _activateAlan();
-      // _handleCommand({'command': 'increment'});
+      // _activateAlan();
+      _handleCommand({'command': 'location'});
     },
   );
 }
@@ -312,6 +312,7 @@ void runLocationCommand() async {
   final res = await InternetConnectionChecker().hasConnection;
   if (!res) {
     _playText('No Internet');
+    return;
   }
 
   //! Aqui poner el codigo de get location en String
