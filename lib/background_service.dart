@@ -6,14 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
 import 'package:pedometer/pedometer.dart';
+import 'package:ihc_app/email_helper.dart';
 import 'package:alan_voice/alan_voice.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_sms/flutter_sms.dart';
-import 'package:ihc_app/helpers/helpers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
-
 
 import 'package:flutter_background_service/flutter_background_service.dart'
     show
@@ -114,8 +113,6 @@ Future<void> _initAll() async {
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
       _activateAlan();
-      // _handleCommand({'command': 'location'});
-      // temp();
     },
   );
 }
@@ -380,7 +377,6 @@ Future<void> runLocationCommand() async {
     respText = 'Error getting location';
     debugPrint(e.toString());
   }
-  print('respuesta de location=> $respText');
   _playText(respText);
 }
 
@@ -406,7 +402,6 @@ Future<String> getDirecctionToStr(double lat, double long) async {
 }
 
 //* Pedometer Commands
-
 void startCountingSteps() async {
   try {
     bool isactivityDenied = await Permission.activityRecognition.isDenied;
@@ -430,7 +425,7 @@ void startCountingSteps() async {
     steps = 0;
     isCountingSteps = true;
     _stepInit = 0;
-    _playText('starting count');
+    _playText('Counter Started');
   } catch (e) {
     _playText('Error starting count');
     debugPrint(e.toString());
@@ -458,14 +453,9 @@ void onStepCount(StepCount event) {
       _stepInit = event.steps;
     }
     steps = _stepHistory - _stepInit;
-    if (steps % 10 == 0) {
-      getStepsCount();
-    }
   }
 }
 
 void onStepCountError(error) {
   debugPrint('onStepCountError: $error');
 }
-
-

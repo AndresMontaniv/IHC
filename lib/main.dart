@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ihc_app/services/background_service.dart';
+import 'package:ihc_app/background_service.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 void main() async {
@@ -58,86 +58,86 @@ class _MyAppState extends State<MyApp> {
                   );
                 },
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 20,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      "Foreground Mode",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  onTap: () {
-                    FlutterBackgroundService().invoke("setAsForeground");
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 20,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      "Background Mode",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  onTap: () {
-                    print('start');
-                    FlutterBackgroundService().invoke("setAsBackground");
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 20,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      text,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  onTap: () async {
-                    final service = FlutterBackgroundService();
-                    var isRunning = await service.isRunning();
-                    if (isRunning) {
-                      service.invoke("stopService");
-                    } else {
-                      service.startService();
-                    }
+              // Padding(
+              //   padding: const EdgeInsets.all(8.0),
+              //   child: GestureDetector(
+              //     child: Container(
+              //       padding: const EdgeInsets.symmetric(
+              //         vertical: 10,
+              //         horizontal: 20,
+              //       ),
+              //       decoration: BoxDecoration(
+              //         color: Colors.blueAccent,
+              //         borderRadius: BorderRadius.circular(16),
+              //       ),
+              //       child: const Text(
+              //         "Foreground Mode",
+              //         style: TextStyle(color: Colors.white),
+              //       ),
+              //     ),
+              //     onTap: () {
+              //       FlutterBackgroundService().invoke("setAsForeground");
+              //     },
+              //   ),
+              // ),
+              // Padding(
+              //   padding: const EdgeInsets.all(8.0),
+              //   child: GestureDetector(
+              //     child: Container(
+              //       padding: const EdgeInsets.symmetric(
+              //         vertical: 10,
+              //         horizontal: 20,
+              //       ),
+              //       decoration: BoxDecoration(
+              //         color: Colors.blueAccent,
+              //         borderRadius: BorderRadius.circular(16),
+              //       ),
+              //       child: const Text(
+              //         "Background Mode",
+              //         style: TextStyle(color: Colors.white),
+              //       ),
+              //     ),
+              //     onTap: () {
+              //       print('start');
+              //       FlutterBackgroundService().invoke("setAsBackground");
+              //     },
+              //   ),
+              // ),
+              // Padding(
+              //   padding: const EdgeInsets.all(8.0),
+              //   child: GestureDetector(
+              //     child: Container(
+              //       padding: const EdgeInsets.symmetric(
+              //         vertical: 10,
+              //         horizontal: 20,
+              //       ),
+              //       decoration: BoxDecoration(
+              //         color: Colors.blueAccent,
+              //         borderRadius: BorderRadius.circular(16),
+              //       ),
+              //       child: Text(
+              //         text,
+              //         style: const TextStyle(color: Colors.white),
+              //       ),
+              //     ),
+              //     onTap: () async {
+              //       final service = FlutterBackgroundService();
+              //       var isRunning = await service.isRunning();
+              //       if (isRunning) {
+              //         service.invoke("stopService");
+              //       } else {
+              //         service.startService();
+              //       }
 
-                    if (!isRunning) {
-                      text = 'Stop Service';
-                    } else {
-                      text = 'Start Service';
-                    }
-                    setState(() {});
-                  },
-                ),
-              ),
+              //       if (!isRunning) {
+              //         text = 'Stop Service';
+              //       } else {
+              //         text = 'Start Service';
+              //       }
+              //       setState(() {});
+              //     },
+              //   ),
+              // ),
             ],
           ),
         ),
