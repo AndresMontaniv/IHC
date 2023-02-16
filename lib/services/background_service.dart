@@ -99,10 +99,10 @@ void onStart(ServiceInstance service) async {
       'update',
       {
         "current_date": DateTime.now().toIso8601String(),
-        "counter": steps,
+        "counter": counter,
       },
     );
-    print('-------------$steps-----------------');
+    print('-------------counter: $counter-----------------');
   });
 }
 
