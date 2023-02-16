@@ -15,7 +15,7 @@ class PedometerScreen extends StatefulWidget {
 class _PedometerScreenState extends State<PedometerScreen> {
   late Stream<StepCount> _stepCountStream;
   late Stream<PedestrianStatus> _pedestrianStatusStream;
-  String _status = '?', _steps = '?';
+  String _status = ' ?', _steps = '?';
   int _stepInit = 0, _stepHistory = 0;
 
   @override
