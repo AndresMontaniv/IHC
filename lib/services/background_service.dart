@@ -43,7 +43,6 @@ Map<String, String> personalInfo = {
 //?pedometer
 late Stream<StepCount> _stepCountStream;
 int _stepInit = 0, _stepHistory = 0;
-late PermissionStatus status;
 //* Background Service Config
 
 Future initializeService() async {
@@ -72,7 +71,6 @@ bool onIosBackground(ServiceInstance service) {
 
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
-  print('----nise');
   DartPluginRegistrant.ensureInitialized();
   _initAll();
   if (service is AndroidServiceInstance) {
@@ -102,11 +100,11 @@ void onStart(ServiceInstance service) async {
         "counter": counter,
       },
     );
-    print('-------------$counter-----------------');
   });
 }
 
-void _initAll() async {
+Future<void> _initAll() async {
+  await requestPermissions();
   AlanVoice.addButton(
     '248a9bbe9688fcab42c7133779c438ef2e956eca572e1d8b807a3e2338fdd0dc/stage',
   );
@@ -114,8 +112,9 @@ void _initAll() async {
   AlanVoice.onCommand.add((command) => _handleCommand(command.data));
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
-      // _activateAlan();
-      _handleCommand({'command': 'location'});
+      _activateAlan();
+      // _handleCommand({'command': 'location'});
+      // temp();
     },
   );
 
@@ -133,17 +132,71 @@ void _initAll() async {
   // _stepCountStream.listen(onStepCount).onError(onStepCountError);
 }
 
+Future<void> requestPermissions() async {
+  Set<Permission> permissions = {
+    Permission.microphone,
+    Permission.audio,
+    Permission.activityRecognition,
+    Permission.sms,
+  };
+  for (var p in permissions) {
+    try {
+      bool isDenied = await p.isDenied;
+      if (isDenied) {
+        var status = await p.request();
+        if (status == PermissionStatus.permanentlyDenied) {
+          await openAppSettings();
+        }
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+  await requestLocationPermission();
+}
+
+Future<bool> requestLocationPermission() async {
+  bool isGranted = false;
+
+  try {
+    //* Location When In Use
+    isGranted = await Permission.locationWhenInUse.isGranted;
+    if (!isGranted) {
+      var status = await Permission.locationWhenInUse.request();
+      if (status == PermissionStatus.permanentlyDenied) {
+        await openAppSettings();
+      }
+    }
+    isGranted = await Permission.locationWhenInUse.isGranted;
+    if (!isGranted) return false;
+
+    //* Location Always
+    isGranted = await Permission.locationAlways.isGranted;
+    if (!isGranted) {
+      var status = await Permission.locationAlways.request();
+      if (status == PermissionStatus.permanentlyDenied) {
+        await openAppSettings();
+      }
+    }
+    isGranted = await Permission.locationAlways.isGranted;
+  } catch (e) {
+    debugPrint(e.toString());
+    isGranted = false;
+  }
+  return isGranted;
+}
+
 void _stopAll() {
   _deactivateAlan();
   _stopListening();
 }
 
 //* Shake Detector Config
-void _startListening() async {
+void _startListening() {
   detector?.startListening();
 }
 
-void _stopListening() async {
+void _stopListening() {
   detector?.stopListening();
 }
 
@@ -160,18 +213,13 @@ Future<void> _deactivateAlan() async {
   }
 }
 
-void _playText(String text) async {
+Future<void> _playText(String text) async {
   await _activateAlan();
   AlanVoice.playText(text);
 }
 
-void speak() {
-  AlanVoice.playText('Hi from flutter');
-}
-
 //? Handle Commands
 void _handleCommand(Map<String, dynamic> command) {
-  print('Llego a handle=> $command');
   switch (command['command']) {
     case 'increment':
       incrementCounter();
@@ -291,20 +339,13 @@ Future<String> sendEmail(String location) async {
   }
 }
 
-void sendSOSAlert() async {
+Future<void> sendSOSAlert() async {
   String playResp = '';
   //* Get Permissions
-  bool isLocationDenied = await Permission.location.isDenied;
-  if (isLocationDenied) {
-    var status = await Permission.location.request();
-    if (PermissionStatus.permanentlyDenied == status) {
-      await openAppSettings();
-    }
-    isLocationDenied = await Permission.location.isDenied;
-    if (isLocationDenied) {
-      _playText('Error!, Location permission disabled');
-      return;
-    }
+  bool isLocationGranted = await requestLocationPermission();
+  if (!isLocationGranted) {
+    _playText('Error!, Location permission disabled');
+    return;
   }
   final isGpsEnable = await Geolocator.isLocationServiceEnabled();
   if (!isGpsEnable) {
@@ -313,7 +354,6 @@ void sendSOSAlert() async {
   }
   //* Get user location
   Position userPosition = await Geolocator.getCurrentPosition();
-  debugPrint(userPosition.toJson().toString());
   String location = '${userPosition.latitude},${userPosition.longitude}';
 
   //? Sending SMS
@@ -327,21 +367,18 @@ void sendSOSAlert() async {
 }
 
 //* Location Command
-void runLocationCommand() async {
-  String respText;
+Future<void> runLocationCommand() async {
+  String respText = '';
   try {
-    bool isLocationDenied = await Permission.location.isDenied;
-    if (isLocationDenied) {
-      //! hay un error
-      var status = await Permission.location.request();
-      if (PermissionStatus.permanentlyDenied == status) {
-        await openAppSettings();
-      }
-      isLocationDenied = await Permission.location.isDenied;
-      if (isLocationDenied) {
-        _playText('Error!, Location permission disabled');
-        return;
-      }
+    bool isLocationGranted = await requestLocationPermission();
+    if (!isLocationGranted) {
+      _playText('Error!, Location permission disabled');
+      return;
+    }
+    final isGpsEnable = await Geolocator.isLocationServiceEnabled();
+    if (!isGpsEnable) {
+      _playText('Error!, gps is not enabled in the phone');
+      return;
     }
 
     final resNet = await InternetConnectionChecker().hasConnection;
@@ -349,19 +386,13 @@ void runLocationCommand() async {
       _playText('Error!, internet is not enabled in the phone');
       return;
     }
-
-    final isEnableGps = await Geolocator.isLocationServiceEnabled();
-    if (!isEnableGps) {
-      _playText('Error!, gps is not enabled in the phone');
-      return;
-    }
     final pos = await Geolocator.getCurrentPosition();
     respText = await getDirecctionToStr(pos.latitude, pos.longitude);
   } catch (e) {
-    respText = 'Error getting ubication';
+    respText = 'Error getting location';
     debugPrint(e.toString());
   }
-  print(respText);
+  print('respuesta de location=> $respText');
   _playText(respText);
 }
 
@@ -388,14 +419,21 @@ Future<String> getDirecctionToStr(double lat, double long) async {
 
 //* Pedometer Commands
 
-void startCountingSteps() async {
+void startCountingSteps() {
+  if (isCountingSteps) {
+    _playText('You are already counting');
+    return;
+  }
   steps = 0;
   isCountingSteps = true;
   _stepInit = 0;
-  _playText('starting count');
 }
 
 void stopCountingSteps() {
+  if (!isCountingSteps) {
+    _playText('You are no counting steps');
+    return;
+  }
   _playText('Stoping Count, You walked $steps steps');
   isCountingSteps = false;
 }
@@ -407,7 +445,6 @@ void getStepsCount() {
 }
 
 void onStepCount(StepCount event) {
-  debugPrint('$event');
   _stepHistory = event.steps;
   if (isCountingSteps) {
     if (_stepInit == 0) {
@@ -419,4 +456,26 @@ void onStepCount(StepCount event) {
 
 void onStepCountError(error) {
   debugPrint('onStepCountError: $error');
+}
+
+//! TESTING TEMP
+Future<void> temp() async {
+  try {
+    bool isLocationGranted = await requestLocationPermission();
+    if (!isLocationGranted) {
+      _playText('Error!, Location permission disabled');
+      return;
+    }
+    final isGpsEnable = await Geolocator.isLocationServiceEnabled();
+    if (!isGpsEnable) {
+      _playText('Error!, gps is not enabled in the phone');
+      return;
+    }
+    final pos = await Geolocator.getCurrentPosition();
+    print('POS=>  salio del await');
+    print('POS=> ${pos.latitude}, ${pos.longitude}');
+    _playText('Got Location');
+  } catch (e) {
+    debugPrint(e.toString());
+  }
 }

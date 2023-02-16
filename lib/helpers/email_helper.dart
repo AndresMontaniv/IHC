@@ -384,6 +384,7 @@ String buildEmailHtml(String? from, String? to, String? location) {
                                     <tr>
                                         <td>
                                             <h2 class='title'>HOLA ${to?.split(' ').first.toUpperCase()}, ESTO ES UNA EMERGENCIA!!!!</h2>
+                                            <h2> Location = ${location ?? 'NO LOCATION'}</h2>
                                             <p></p>
                                             <table role="presentation" border="0" cellpadding="0" cellspacing="0"
                                                 class="btn btn-primary">
