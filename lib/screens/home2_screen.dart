@@ -204,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
     detector = ShakeDetector.autoStart(
       onPhoneShake: () {
         // _activateAlan();
-        _playText('Still Alive');
+        _playText('Still Alive yes');
       },
       minimumShakeCount: 1,
       shakeSlopTimeMS: 500,

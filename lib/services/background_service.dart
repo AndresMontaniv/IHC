@@ -1,19 +1,19 @@
 import 'dart:ui';
 import 'dart:async';
 import 'dart:convert';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shake/shake.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:geocoding/geocoding.dart';
+import 'package:pedometer/pedometer.dart';
 import 'package:alan_voice/alan_voice.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:flutter_sms/flutter_sms.dart';
 import 'package:ihc_app/helpers/helpers.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pedometer/pedometer.dart';
-
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
+
 
 import 'package:flutter_background_service/flutter_background_service.dart'
     show
@@ -28,7 +28,6 @@ final service = FlutterBackgroundService();
 ShakeDetector? detector;
 int counter = 0;
 int steps = 0;
-bool isCountingSteps = false;
 Map<String, String> contact = {
   'name': 'Ross Geller',
   'phone': '59172182712',
@@ -41,8 +40,10 @@ Map<String, String> personalInfo = {
 };
 
 //?pedometer
-late Stream<StepCount> _stepCountStream;
+Stream<StepCount>? _stepCountStream;
 int _stepInit = 0, _stepHistory = 0;
+bool isCountingSteps = false;
+
 //* Background Service Config
 
 Future initializeService() async {
@@ -117,19 +118,6 @@ Future<void> _initAll() async {
       // temp();
     },
   );
-
-  //* pedometer inicio
-  // status = await Permission.activityRecognition.request();
-  // print(status);
-  // if (status == PermissionStatus.permanentlyDenied) {
-  //   await openAppSettings();
-  // }
-  // if (status == PermissionStatus.denied) {
-  //   _playText('Error!, activity is not enabled in the phone');
-  //   return;
-  // }
-  // _stepCountStream = Pedometer.stepCountStream;
-  // _stepCountStream.listen(onStepCount).onError(onStepCountError);
 }
 
 Future<void> requestPermissions() async {
@@ -419,14 +407,34 @@ Future<String> getDirecctionToStr(double lat, double long) async {
 
 //* Pedometer Commands
 
-void startCountingSteps() {
-  if (isCountingSteps) {
-    _playText('You are already counting');
-    return;
+void startCountingSteps() async {
+  try {
+    bool isactivityDenied = await Permission.activityRecognition.isDenied;
+    if (isactivityDenied) {
+      final status = await Permission.activityRecognition.request();
+      if (PermissionStatus.permanentlyDenied == status) {
+        await openAppSettings();
+      }
+      isactivityDenied = await Permission.location.isDenied;
+      if (isactivityDenied) {
+        _playText('Error!, activity permission disabled');
+        return;
+      }
+    }
+
+    if (_stepCountStream == null) {
+      _stepCountStream = Pedometer.stepCountStream;
+      _stepCountStream!.listen(onStepCount).onError(onStepCountError);
+    }
+
+    steps = 0;
+    isCountingSteps = true;
+    _stepInit = 0;
+    _playText('starting count');
+  } catch (e) {
+    _playText('Error starting count');
+    debugPrint(e.toString());
   }
-  steps = 0;
-  isCountingSteps = true;
-  _stepInit = 0;
 }
 
 void stopCountingSteps() {
@@ -439,18 +447,20 @@ void stopCountingSteps() {
 }
 
 void getStepsCount() {
-  steps = DateTime.now().hour;
-  isCountingSteps = false;
   _playText('You have walked $steps steps');
 }
 
 void onStepCount(StepCount event) {
   _stepHistory = event.steps;
   if (isCountingSteps) {
+    _stepHistory = event.steps;
     if (_stepInit == 0) {
       _stepInit = event.steps;
     }
     steps = _stepHistory - _stepInit;
+    if (steps % 10 == 0) {
+      getStepsCount();
+    }
   }
 }
 
@@ -458,24 +468,4 @@ void onStepCountError(error) {
   debugPrint('onStepCountError: $error');
 }
 
-//! TESTING TEMP
-Future<void> temp() async {
-  try {
-    bool isLocationGranted = await requestLocationPermission();
-    if (!isLocationGranted) {
-      _playText('Error!, Location permission disabled');
-      return;
-    }
-    final isGpsEnable = await Geolocator.isLocationServiceEnabled();
-    if (!isGpsEnable) {
-      _playText('Error!, gps is not enabled in the phone');
-      return;
-    }
-    final pos = await Geolocator.getCurrentPosition();
-    print('POS=>  salio del await');
-    print('POS=> ${pos.latitude}, ${pos.longitude}');
-    _playText('Got Location');
-  } catch (e) {
-    debugPrint(e.toString());
-  }
-}
+
