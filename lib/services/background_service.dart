@@ -41,9 +41,9 @@ Map<String, String> personalInfo = {
 };
 
 //?pedometer
-late Stream<StepCount> _stepCountStream;
+Stream<StepCount>? _stepCountStream;
 int _stepInit = 0, _stepHistory = 0;
-late PermissionStatus status;
+
 //* Background Service Config
 
 Future initializeService() async {
@@ -99,10 +99,10 @@ void onStart(ServiceInstance service) async {
       'update',
       {
         "current_date": DateTime.now().toIso8601String(),
-        "counter": counter,
+        "counter": steps,
       },
     );
-    print('-------------$counter-----------------');
+    print('-------------$steps-----------------');
   });
 }
 
@@ -115,24 +115,12 @@ void _initAll() async {
   detector = ShakeDetector.autoStart(
     onPhoneShake: () {
       print('-------ShakeDetector--------------');
-      _activateAlan();
+      // _activateAlan();
       // _handleCommand({'command': 'increment'});
       // _handleCommand({'command': 'location'});
+      _handleCommand({'command': 'start_step_count'});
     },
   );
-
-  //* pedometer inicio
-  // status = await Permission.activityRecognition.request();
-  // print(status);
-  // if (status == PermissionStatus.permanentlyDenied) {
-  //   await openAppSettings();
-  // }
-  // if (status == PermissionStatus.denied) {
-  //   _playText('Error!, activity is not enabled in the phone');
-  //   return;
-  // }
-  // _stepCountStream = Pedometer.stepCountStream;
-  // _stepCountStream.listen(onStepCount).onError(onStepCountError);
 }
 
 void _stopAll() {
@@ -397,10 +385,33 @@ Future<String> getDirecctionToStr(double lat, double long) async {
 //* Pedometer Commands
 
 void startCountingSteps() async {
-  steps = 0;
-  isCountingSteps = true;
-  _stepInit = 0;
-  _playText('starting count');
+  try {
+    bool isactivityDenied = await Permission.activityRecognition.isDenied;
+    if (isactivityDenied) {
+      final status = await Permission.activityRecognition.request();
+      if (PermissionStatus.permanentlyDenied == status) {
+        await openAppSettings();
+      }
+      isactivityDenied = await Permission.location.isDenied;
+      if (isactivityDenied) {
+        _playText('Error!, activity permission disabled');
+        return;
+      }
+    }
+
+    if (_stepCountStream == null) {
+      _stepCountStream = Pedometer.stepCountStream;
+      _stepCountStream!.listen(onStepCount).onError(onStepCountError);
+    }
+
+    steps = 0;
+    isCountingSteps = true;
+    _stepInit = 0;
+    _playText('starting count');
+  } catch (e) {
+    _playText('Error starting count');
+    debugPrint(e.toString());
+  }
 }
 
 void stopCountingSteps() {
@@ -409,19 +420,21 @@ void stopCountingSteps() {
 }
 
 void getStepsCount() {
-  steps = DateTime.now().hour;
-  isCountingSteps = false;
+  // steps = DateTime.now().hour;
   _playText('You have walked $steps steps');
 }
 
 void onStepCount(StepCount event) {
   debugPrint('$event');
-  _stepHistory = event.steps;
   if (isCountingSteps) {
+    _stepHistory = event.steps;
     if (_stepInit == 0) {
       _stepInit = event.steps;
     }
     steps = _stepHistory - _stepInit;
+    // if (steps % 10 == 0) {
+    //   getStepsCount();
+    // }
   }
 }
 
