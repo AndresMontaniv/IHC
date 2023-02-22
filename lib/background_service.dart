@@ -429,7 +429,8 @@ void startCountingSteps() async {
   } catch (e) {
     _playText('Error starting count');
     debugPrint(e.toString());
-  }
+  } 
+  
 }
 
 void stopCountingSteps() {
